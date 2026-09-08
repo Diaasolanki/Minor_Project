@@ -1,0 +1,93 @@
+{
+  "n_sessions": 1000,
+  "skill_report": {
+    "advanced": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 50.0
+    },
+    "intermediate": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 50.0
+    },
+    "novice": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 50.0
+    },
+    "scripted_bot": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 50.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 200.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 200.0
+    }
+  },
+  "intent_report": {
+    "botnet_recruitment": {
+      "precision": 0.7638888888888888,
+      "recall": 0.859375,
+      "f1-score": 0.8088235294117647,
+      "support": 64.0
+    },
+    "credential_theft": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 20.0
+    },
+    "cryptomining": {
+      "precision": 0.35714285714285715,
+      "recall": 0.22727272727272727,
+      "f1-score": 0.2777777777777778,
+      "support": 22.0
+    },
+    "data_exfiltration": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 29.0
+    },
+    "ransomware_staging": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 15.0
+    },
+    "recon": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 50.0
+    },
+    "accuracy": 0.87,
+    "macro avg": {
+      "precision": 0.853505291005291,
+      "recall": 0.8477746212121211,
+      "f1-score": 0.8477668845315905,
+      "support": 200.0
+    },
+    "weighted avg": {
+      "precision": 0.8537301587301588,
+      "recall": 0.87,
+      "f1-score": 0.8593790849673204,
+      "support": 200.0
+    }
+  }
+}

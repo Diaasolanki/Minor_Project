@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Runtime data (regenerated / grows unbounded)
+honeypot/data/ttp.db
+
+# Large merged inference model (2.9GB) — exclude from git.
+# Regenerate locally with: python src/engine/merge_lora.py
+# (the much smaller LoRA adapter in models/response_lora/ IS kept in git)
+honeypot/models/response_merged/
+
+# Training checkpoints (intermediate optimizer state, not needed after training)
+honeypot/models/response_lora/checkpoint-*/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp

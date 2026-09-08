@@ -1,0 +1,17 @@
+torch --index-url https://download.pytorch.org/whl/cu124
+transformers>=4.44
+peft
+accelerate
+datasets
+scikit-learn
+xgboost
+pandas
+numpy
+matplotlib
+joblib
+fastapi
+uvicorn[standard]
+flask
+flask-sock
+requests
+sentencepiece

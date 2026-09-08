@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Adaptive AI Honeypot — Dashboard</title>
+<style>
+  :root{--bg:#0b0e14;--panel:#131722;--panel2:#171c29;--border:#232838;--text:#d7dae2;--muted:#7c8494;
+       --accent:#4ec9b0;--accent2:#61afef;--danger:#e06c75;--warn:#e5c07b;--ok:#98c379;--purple:#c678dd;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;}
+  a{color:var(--accent);text-decoration:none;}
+  header{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;
+        justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:5;}
+  header h1{font-size:17px;margin:0;display:flex;align-items:center;gap:8px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok);
+      animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  nav a{font-size:12.5px;margin-left:16px;}
+  .wrap{max-width:1320px;margin:0 auto;padding:18px 20px 40px;}
+  .stat-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px;}
+  .stat{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+  .stat .num{font-size:22px;font-weight:700;}
+  .stat .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
+  .grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
+  .panel h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+           margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+  .tab{padding:5px 12px;border-radius:14px;font-size:11.5px;background:var(--panel2);
+      border:1px solid var(--border);color:var(--muted);cursor:pointer;user-select:none;}
+  .tab.active{background:var(--accent);color:#062622;border-color:var(--accent);font-weight:600;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  th{color:var(--muted);font-weight:500;font-size:11px;}
+  tr.row:hover{background:var(--panel2);cursor:pointer;}
+  tr.row.selected{background:#1a2440;}
+  .badge{padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;}
+  .skill-advanced{background:#3a1f22;color:var(--danger);}
+  .skill-intermediate{background:#3a331f;color:var(--warn);}
+  .skill-novice{background:#1f3a2b;color:var(--ok);}
+  .skill-scripted_bot{background:#1f2f3a;color:var(--accent2);}
+  .skill-unknown,.skill-null,.skill-undefined{background:#232838;color:var(--muted);}
+  .proto{padding:2px 7px;border-radius:4px;font-size:9.5px;text-transform:uppercase;
+        letter-spacing:.03em;background:#1c2333;color:var(--accent2);}
+  .proto-telnet{color:var(--warn);background:#332c1c;}
+  .proto-db{color:var(--danger);background:#331c22;}
+  .proto-http-login{color:var(--purple);background:#2b1c33;}
+  .empty{color:var(--muted);font-size:13px;padding:30px 10px;text-align:center;}
+  #detail{font-size:12.5px;max-height:420px;overflow-y:auto;}
+  #detail .cmd{color:var(--accent);font-family:Consolas,monospace;}
+  #detail .out{color:var(--muted);white-space:pre-wrap;margin:2px 0 10px;padding-left:12px;
+              border-left:2px solid var(--border);font-family:Consolas,monospace;font-size:12px;}
+  #detail .out.current{border-left-color:var(--accent);color:var(--text);}
+  #detail .tech{color:var(--warn);font-size:10.5px;margin:-6px 0 10px 12px;}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+  .btn{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:5px 11px;
+      border-radius:5px;font-size:11.5px;cursor:pointer;}
+  .btn:hover{border-color:var(--accent);color:var(--accent);}
+  .btn:disabled{opacity:.4;cursor:default;}
+  select{background:var(--panel2);border:1px solid var(--border);color:var(--text);
+        border-radius:5px;padding:4px 8px;font-size:11.5px;}
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:11.5px;}
+  .bar-label{width:130px;flex-shrink:0;color:var(--muted);text-align:right;}
+  .bar-track{flex:1;background:var(--panel2);border-radius:4px;height:14px;overflow:hidden;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+  .bar-val{width:40px;flex-shrink:0;font-size:11px;color:var(--text);}
+  .eval-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .kpi-row{display:flex;gap:10px;margin-bottom:12px;}
+  .kpi{flex:1;background:var(--panel2);border-radius:6px;padding:10px;text-align:center;}
+  .kpi .v{font-size:18px;font-weight:700;color:var(--accent);}
+  .kpi .l{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+  .footnote{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="dot"></span> Adaptive AI Honeypot — Live Dashboard</h1>
+  <nav>
+    <a href="/">Fake terminal</a>
+    <a href="/login">Fake admin login</a>
+  </nav>
+</header>
+<div class="wrap">
+  <div class="stat-row" id="stats"></div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Sessions</h2>
+      <div class="tabs" id="protocol-tabs"></div>
+      <div style="max-height:440px;overflow-y:auto;">
+        <table>
+          <thead><tr><th>Session</th><th>Surface</th><th>Source IP</th><th>Started</th>
+            <th>Engaged</th><th>Events</th><th>Skill</th><th>Intent</th></tr></thead>
+          <tbody id="sessions-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Session Detail / TTP Trace</h2>
+      <div class="toolbar" id="replay-controls" style="display:none;">
+        <button class="btn" id="btn-play">&#9654; Play</button>
+        <button class="btn" id="btn-step">Step</button>
+        <button class="btn" id="btn-reset">Reset</button>
+        <select id="replay-speed">
+          <option value="1400">Slow</option>
+          <option value="700" selected>Normal</option>
+          <option value="250">Fast</option>
+        </select>
+        <button class="btn" id="btn-stix">&#8681; Download STIX</button>
+      </div>
+      <div id="detail" class="empty">Select a session to view its command trace, or press Play to replay it like a session recording.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Evaluation (build-guide §7)</h2>
+    <div class="eval-grid">
+      <div>
+        <div class="footnote" style="margin-bottom:10px;">Skill classifier — held-out per-class F1</div>
+        <div id="skill-bars"></div>
+        <div class="footnote" style="margin:16px 0 10px;">Intent classifier — held-out per-class F1</div>
+        <div id="intent-bars"></div>
+      </div>
+      <div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="v" id="kpi-latency">-</div><div class="l">Avg latency</div></div>
+          <div class="kpi"><div class="v" id="kpi-engagement">-</div><div class="l">Avg engagement</div></div>
+          <div class="kpi"><div class="v" id="kpi-techniques">-</div><div class="l">TTP techniques seen</div></div>
+        </div>
+        <div class="footnote" style="margin-bottom:10px;">MITRE ATT&amp;CK technique frequency (live)</div>
+        <div id="mitre-bars"></div>
+        <div class="footnote" style="margin-top:14px;">Response engine usage</div>
+        <div id="engine-bars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentProtocolFilter = 'all';
+let replayEvents = [];
+let replayIndex = 0;
+let replayTimer = null;
+let currentSid = null;
+
+async function loadStats() {
+  const s = await (await fetch('/api/stats')).json();
+  const el = document.getElementById('stats');
+  el.innerHTML = `
+    <div class="stat"><div class="num">${s.total_sessions}</div><div class="lbl">Sessions</div></div>
+    <div class="stat"><div class="num">${s.skill_breakdown.advanced || 0}</div><div class="lbl">Advanced</div></div>
+    <div class="stat"><div class="num">${s.skill_breakdown.intermediate || 0}</div><div class="lbl">Intermediate</div></div>
+    <div class="stat"><div class="num">${s.skill_breakdown.scripted_bot || 0}</div><div class="lbl">Bots</div></div>
+    <div class="stat"><div class="num">${s.skill_breakdown.novice || 0}</div><div class="lbl">Novice</div></div>
+    <div class="stat"><div class="num">${(s.protocol_breakdown.telnet||0) + (s.protocol_breakdown.db||0) + (s.protocol_breakdown['http-login']||0)}</div><div class="lbl">Non-shell hits</div></div>
+  `;
+  renderTabs(s.protocol_breakdown, s.total_sessions);
+}
+
+function renderTabs(breakdown, total) {
+  const el = document.getElementById('protocol-tabs');
+  const protos = [['all', 'All', total], ['http', 'HTTP shell', breakdown.http||0],
+                  ['telnet', 'Telnet', breakdown.telnet||0], ['db', 'DB', breakdown.db||0],
+                  ['http-login', 'Login', breakdown['http-login']||0]];
+  el.innerHTML = protos.map(([key, label, n]) =>
+    `<div class="tab ${key===currentProtocolFilter?'active':''}" data-proto="${key}">${label} (${n})</div>`
+  ).join('');
+  el.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+    currentProtocolFilter = t.dataset.proto;
+    loadSessions();
+  });
+}
+
+function fmtTime(ts) { return ts ? new Date(ts * 1000).toLocaleString() : '-'; }
+function fmtDuration(secs) {
+  secs = Math.round(secs || 0);
+  if (secs < 1) return '<1s';
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+async function loadSessions() {
+  const rows = await (await fetch('/api/sessions')).json();
+  const filtered = currentProtocolFilter === 'all' ? rows :
+    rows.filter(r => (r.protocol || 'http') === currentProtocolFilter);
+  const body = document.getElementById('sessions-body');
+  body.innerHTML = '';
+  for (const r of filtered) {
+    const tr = document.createElement('tr');
+    tr.className = 'row' + (r.session_id === currentSid ? ' selected' : '');
+    tr.onclick = () => loadDetail(r.session_id);
+    tr.innerHTML = `
+      <td>${r.session_id.slice(0,8)}</td>
+      <td><span class="proto proto-${r.protocol}">${r.protocol || 'http'}</span></td>
+      <td>${r.source_ip}</td>
+      <td>${fmtTime(r.started_at)}</td>
+      <td>${fmtDuration(r.engagement_seconds)}</td>
+      <td>${r.event_count}</td>
+      <td><span class="badge skill-${r.classifier_skill}">${r.classifier_skill || '-'}</span></td>
+      <td>${r.classifier_intent || '-'}</td>
+    `;
+    body.appendChild(tr);
+  }
+}
+
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+async function loadDetail(sid) {
+  currentSid = sid;
+  stopReplay();
+  const s = await (await fetch(`/api/session/${sid}`)).json();
+  replayEvents = s.events;
+  replayIndex = replayEvents.length;
+  document.getElementById('replay-controls').style.display = replayEvents.length ? 'flex' : 'none';
+  document.getElementById('btn-stix').onclick = () => window.open(`/api/session/${sid}/stix`, '_blank');
+  renderTrace();
+  loadSessions();
+}
+
+function renderTrace() {
+  const el = document.getElementById('detail');
+  if (!replayEvents.length) { el.className = 'empty'; el.textContent = 'No events yet for this session.'; return; }
+  el.className = '';
+  el.innerHTML = replayEvents.slice(0, replayIndex).map((e, i) => `
+    <div class="cmd">$ ${escapeHtml(e.raw_command)}</div>
+    <div class="out${i === replayIndex - 1 ? ' current' : ''}">${escapeHtml((e.llm_output||'').slice(0,500))}</div>
+    ${e.mitre_technique ? `<div class="tech">${e.mitre_technique} — ${e.mitre_tactic}</div>` : ''}
+  `).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function stopReplay() {
+  if (replayTimer) { clearInterval(replayTimer); replayTimer = null; }
+  document.getElementById('btn-play').innerHTML = '&#9654; Play';
+}
+
+document.getElementById('btn-play').onclick = () => {
+  if (replayTimer) { stopReplay(); return; }
+  if (replayIndex >= replayEvents.length) replayIndex = 0;
+  document.getElementById('btn-play').innerHTML = '&#10074;&#10074; Pause';
+  const speed = parseInt(document.getElementById('replay-speed').value, 10);
+  replayTimer = setInterval(() => {
+    if (replayIndex >= replayEvents.length) { stopReplay(); return; }
+    replayIndex++;
+    renderTrace();
+  }, speed);
+};
+document.getElementById('btn-step').onclick = () => {
+  if (replayIndex < replayEvents.length) { replayIndex++; renderTrace(); }
+};
+document.getElementById('btn-reset').onclick = () => {
+  stopReplay(); replayIndex = 0; renderTrace();
+};
+
+function bar(label, value, max) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return `<div class="bar-row"><div class="bar-label">${escapeHtml(label)}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+    <div class="bar-val">${typeof value === 'number' && value <= 1 ? (value*100).toFixed(0)+'%' : value}</div></div>`;
+}
+
+async function loadMetrics() {
+  const m = await (await fetch('/api/metrics')).json();
+  const live = m.live, ce = m.classifier_eval;
+
+  document.getElementById('kpi-latency').textContent =
+    live.latency.n ? Math.round(live.latency.avg_ms) + 'ms' : '-';
+  document.getElementById('kpi-engagement').textContent =
+    live.engagement.n ? fmtDuration(live.engagement.avg_seconds) : '-';
+  document.getElementById('kpi-techniques').textContent = live.techniques.length;
+
+  const mitreEl = document.getElementById('mitre-bars');
+  const maxN = Math.max(1, ...live.techniques.map(t => t.n));
+  mitreEl.innerHTML = live.techniques.slice(0, 8).map(t =>
+    bar(`${t.mitre_technique} ${t.mitre_tactic || ''}`, t.n, maxN)).join('') ||
+    '<div class="footnote">No commands logged yet.</div>';
+
+  const engEl = document.getElementById('engine-bars');
+  const maxE = Math.max(1, ...live.engines.map(e => e.n));
+  engEl.innerHTML = live.engines.map(e => bar(e.engine, e.n, maxE)).join('') ||
+    '<div class="footnote">No engine activity yet.</div>';
+
+  if (ce.skill_report) {
+    const el = document.getElementById('skill-bars');
+    el.innerHTML = Object.entries(ce.skill_report)
+      .filter(([k]) => !['accuracy','macro avg','weighted avg'].includes(k))
+      .map(([k, v]) => bar(k, v['f1-score'], 1)).join('');
+  }
+  if (ce.intent_report) {
+    const el = document.getElementById('intent-bars');
+    el.innerHTML = Object.entries(ce.intent_report)
+      .filter(([k]) => !['accuracy','macro avg','weighted avg'].includes(k))
+      .map(([k, v]) => bar(k, v['f1-score'], 1)).join('');
+  }
+}
+
+loadStats(); loadSessions(); loadMetrics();
+setInterval(() => { loadStats(); loadSessions(); loadMetrics(); }, 5000);
+</script>
+</body>
+</html>

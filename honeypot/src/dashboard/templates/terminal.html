@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>web-prod-03 — SSH</title>
+<style>
+  :root{--bg:#0c0e14;--fg:#d6dae3;--accent:#4ec9b0;--muted:#5c6270;--border:#20232c;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
+           font-family:"Cascadia Code","Consolas",monospace;}
+  #titlebar{height:34px;background:#15171d;border-bottom:1px solid var(--border);
+           display:flex;align-items:center;padding:0 12px;justify-content:space-between;
+           font-size:12px;color:var(--muted);}
+  #titlebar .dots{display:flex;gap:6px;}
+  #titlebar .dot{width:10px;height:10px;border-radius:50%;}
+  .dot.r{background:#ff5f56;} .dot.y{background:#ffbd2e;} .dot.g{background:#27c93f;}
+  #titlebar a{color:var(--muted);text-decoration:none;font-size:11px;}
+  #titlebar a:hover{color:var(--accent);}
+  #term{padding:14px 16px;white-space:pre-wrap;word-break:break-word;
+       height:calc(100% - 34px - 42px);overflow-y:auto;font-size:13.5px;line-height:1.4;}
+  #term .line{margin:0;}
+  #term .in{color:var(--accent);}
+  #term .meta{color:#3d4250;font-size:10.5px;margin-left:8px;}
+  #inputline{display:flex;align-items:center;padding:0 16px;height:42px;border-top:1px solid var(--border);}
+  #prompt{color:var(--accent);white-space:pre;font-size:13.5px;}
+  #cmd{flex:1;background:transparent;border:none;color:var(--fg);font:inherit;
+      font-size:13.5px;outline:none;margin-left:4px;caret-color:var(--accent);}
+  #cmd:disabled{opacity:.5;}
+  .cursor-blink{display:inline-block;width:8px;height:15px;background:var(--accent);
+               vertical-align:middle;animation:blink 1s step-end infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  ::-webkit-scrollbar{width:9px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
+</style>
+</head>
+<body>
+<div id="titlebar">
+  <div class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+  <span id="conn-status">connecting&hellip;</span>
+  <a href="/dashboard">dashboard &rarr;</a>
+</div>
+<div id="term"></div>
+<div id="inputline"><span id="prompt">$ </span><input id="cmd" autofocus autocomplete="off" spellcheck="false" disabled></div>
+<script>
+const term = document.getElementById('term');
+const promptEl = document.getElementById('prompt');
+const cmdEl = document.getElementById('cmd');
+const statusEl = document.getElementById('conn-status');
+let sessionId = null;
+
+function appendLine(text, cls) {
+  const div = document.createElement('div');
+  div.className = 'line' + (cls ? ' ' + cls : '');
+  div.textContent = text;
+  term.appendChild(div);
+  term.scrollTop = term.scrollHeight;
+}
+
+function appendOutput(text, meta) {
+  const div = document.createElement('div');
+  div.className = 'line';
+  div.textContent = text;
+  if (meta) {
+    const m = document.createElement('span');
+    m.className = 'meta';
+    m.textContent = meta;
+    div.appendChild(m);
+  }
+  term.appendChild(div);
+  term.scrollTop = term.scrollHeight;
+}
+
+async function start() {
+  try {
+    const res = await fetch('/api/session/new', {method: 'POST'});
+    const data = await res.json();
+    sessionId = data.session_id;
+    appendOutput(data.banner);
+    promptEl.textContent = data.prompt;
+    statusEl.textContent = `session ${sessionId.slice(0,8)} — connected`;
+    cmdEl.disabled = false;
+    cmdEl.focus();
+  } catch (e) {
+    statusEl.textContent = 'connection failed';
+  }
+}
+
+cmdEl.addEventListener('keydown', async (e) => {
+  if (e.key !== 'Enter') return;
+  const command = cmdEl.value;
+  if (!command.trim()) return;
+  appendLine(promptEl.textContent + command, 'in');
+  cmdEl.value = '';
+  cmdEl.disabled = true;
+  statusEl.textContent = 'running…';
+  try {
+    const res = await fetch(`/api/session/${sessionId}/run`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({command})
+    });
+    const data = await res.json();
+    if (data.display_output) appendOutput(data.display_output, `  [${data.engine}, ${data.latency_ms}ms]`);
+    promptEl.textContent = data.prompt;
+    statusEl.textContent = `session ${sessionId.slice(0,8)} — connected`;
+    if (data.close) {
+      appendLine('Connection to web-prod-03 closed.');
+      promptEl.textContent = '';
+      statusEl.textContent = 'disconnected';
+      return;
+    }
+  } catch (err) {
+    appendLine('*** connection error — try again ***');
+    statusEl.textContent = 'error';
+  }
+  cmdEl.disabled = false;
+  cmdEl.focus();
+});
+
+start();
+</script>
+</body>
+</html>

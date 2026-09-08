@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin Login</title>
+<style>
+  html,body{margin:0;height:100%;background:#f2f3f5;font-family:"Segoe UI",Arial,sans-serif;
+           display:flex;align-items:center;justify-content:center;}
+  .card{background:#fff;border:1px solid #d8dbe0;border-radius:4px;padding:32px 36px;width:320px;
+        box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .card h1{font-size:18px;margin:0 0 4px;color:#2c2f36;}
+  .card p.sub{font-size:12px;color:#8a8f98;margin:0 0 20px;}
+  label{display:block;font-size:12px;color:#555;margin-bottom:4px;margin-top:12px;}
+  input{width:100%;padding:8px 10px;border:1px solid #cbd0d6;border-radius:3px;font-size:14px;
+       box-sizing:border-box;}
+  button{margin-top:20px;width:100%;padding:9px;background:#3a6df0;color:#fff;border:none;
+        border-radius:3px;font-size:14px;cursor:pointer;}
+  button:hover{background:#2f5cd6;}
+  .error{color:#c0392b;font-size:12px;margin-top:14px;}
+  .success{color:#1e8449;font-size:13px;margin-top:14px;}
+  .footer{margin-top:18px;font-size:11px;color:#b0b4ba;text-align:center;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>app-srv-01 &middot; Admin Panel</h1>
+  <p class="sub">Internal deployment console</p>
+  {% if success %}
+    <div class="success">Login successful. Redirecting to dashboard&hellip;</div>
+  {% else %}
+    <form method="POST" action="/login">
+      <label>Username</label>
+      <input type="text" name="username" autocomplete="off">
+      <label>Password</label>
+      <input type="password" name="password">
+      <button type="submit">Sign in</button>
+      {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    </form>
+  {% endif %}
+  <div class="footer">v2.4.1-internal &nbsp;&middot;&nbsp; <a href="/dashboard" style="color:#b0b4ba;">dashboard</a></div>
+</div>
+</body>
+</html>
