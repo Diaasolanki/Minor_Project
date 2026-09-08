@@ -131,24 +131,35 @@ honeypot/
 
 ```bash
 cd honeypot
-python -m venv .venv && .venv/Scripts/activate   # already created
-pip install -r requirements.txt                  # already installed
+python -m venv .venv && .venv/Scripts/activate
+pip install -r requirements.txt
 
-# regenerate the synthetic dataset (optional, already generated)
-python src/scripts/gen_dataset.py 1000
-
-# train the classifiers (optional, already trained)
-python src/classifier/train.py
-
-# fine-tune the response model (optional, already trained — ~8 hours on an RTX 4070
-# in this environment; the earlier interrupted run resumed cleanly from checkpoint)
-python src/engine/train_lora.py
+# The LoRA adapter, both classifiers, and the synthetic training data are
+# already in this repo (models/response_lora/, models/*.joblib,
+# data/synthetic/) — nothing to train before you can run the honeypot.
+#
+# The merged inference model (models/response_merged/, ~2.9GB) is NOT
+# checked into git — it's rebuilt from the adapter above. Either skip this
+# (response_engine.py falls back to base model + adapter automatically,
+# a few seconds slower to start) or rebuild it once, no GPU training needed:
 python src/engine/merge_lora.py
 
 # run all three surfaces + dashboard together
 python run_honeypot.py
 # or, HTTP surface only:
 python run_dashboard.py
+```
+
+To regenerate the synthetic dataset, classifiers, or the LoRA adapter itself
+from scratch instead of using what's checked in:
+
+```bash
+python src/scripts/gen_dataset.py 1000   # synthetic sessions + LLM training pairs
+python src/classifier/train.py           # skill + intent XGBoost classifiers
+python src/engine/train_lora.py          # LoRA fine-tune (long-running, GPU required —
+                                          # ~8 hours for 3 epochs on an RTX 4070;
+                                          # checkpoints every epoch and resumes if interrupted)
+python src/engine/merge_lora.py          # merge the new adapter for inference
 ```
 
 Then:

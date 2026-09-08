@@ -19,12 +19,28 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-The trained models (LoRA adapter, merged model, classifiers) are already
-included under `honeypot/models/`, and the synthetic training data is already
-generated under `honeypot/data/synthetic/`, so you can skip straight to
-**Section 4 — Running the honeypot**.
+The trained LoRA adapter and classifiers are included in this repo under
+`honeypot/models/` (small enough for git), and the synthetic training data is
+included under `honeypot/data/synthetic/`.
 
-If you want to regenerate everything from scratch instead, see Section 5.
+The **merged** inference model (`honeypot/models/response_merged/`, ~2.9GB)
+is intentionally **not** in the git repo — it's a rebuilt-from-the-adapter
+artifact, too large for a normal git push. The app works fine without it:
+`response_engine.py` automatically falls back to loading the base model +
+LoRA adapter directly if `response_merged/` is missing (a few seconds slower
+to start, functionally identical). If you want the faster merged form, run:
+
+```bash
+python src/engine/merge_lora.py
+```
+
+once after cloning — it rebuilds `response_merged/` from the included adapter
+in under a minute (no GPU retraining needed). Everything else (classifiers,
+adapter, synthetic data) works immediately after `pip install`, so you can
+skip straight to **Section 4 — Running the honeypot**.
+
+If you want to regenerate everything from scratch instead (new synthetic
+data, retrained classifiers, retrained LoRA), see Section 5.
 
 ## 3. What gets installed
 
