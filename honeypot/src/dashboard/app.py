@@ -18,14 +18,21 @@ from flask import Flask, Response, jsonify, render_template, request
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from emulation.fake_webapp import init_portal_db, portal_bp  # noqa: E402
 from engine.session_runner import REGISTRY, get_engine  # noqa: E402
 from ttp import store  # noqa: E402
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "models")
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
+# Needed for the fake vulnerable web portal's own session cookie (Flask's
+# `session` object) — a fixed dev key is fine here since nothing behind this
+# app is real; it never protects anything worth protecting.
+app.secret_key = "honeypot-dev-key-not-a-real-secret"
+app.register_blueprint(portal_bp)
 
 store.init_db()
+init_portal_db()
 get_engine()  # load the model once at startup rather than on first request
 
 # Decoy credentials: matches the password baked into the fake /var/www/app/config.php

@@ -45,16 +45,17 @@ Ubuntu shell behavior without ever touching a paid API.
 
 ## Architecture
 
-Three attacker-facing surfaces (build guide layer 1), sharing one Session
+Five attacker-facing surfaces (build guide layer 1), sharing one Session
 Manager, one Response Engine, and one TTP store/dashboard
 (`engine/session_runner.py` is the shared spine):
 
 ```
- fake HTTP terminal (/)  ─┐
- fake admin login (/login)├─→  SessionRunner / SessionRegistry
- fake Telnet shell (:2323)│    (engine/session_runner.py)
- fake MySQL wire (:3307) ─┘              │
-                                          ▼
+ fake HTTP terminal (/)          ─┐
+ fake admin login (/login)        │
+ fake vulnerable web portal       ├─→  SessionRunner / SessionRegistry
+   (/portal/*: SQLi, XSS, IDOR)   │    (engine/session_runner.py)
+ fake Telnet shell (:2323)        │              │
+ fake MySQL wire (:3307)         ─┘              ▼
                           Session Manager (state/fakefs.py)
                           per-session fake filesystem, users, cwd, env
                                           │
@@ -75,19 +76,22 @@ Manager, one Response Engine, and one TTP store/dashboard
                                           │
                                           ▼
               Dashboard (/dashboard) — live sessions across all
-              three surfaces, tagged by protocol, with TTP trace
+              five surfaces, tagged by protocol, with TTP trace
 ```
 
-The three surfaces map directly to the build guide's layer-1 description:
+The five surfaces map to the build guide's layer-1 description (the web
+portal additionally covers the "fake vulnerable web application" angle from
+the HoneyScope project — see **Acknowledgements** below):
 
 | Surface | Endpoint | What it emulates |
 |---|---|---|
 | Fake HTTP terminal | `http://localhost:5000/` | interactive shell over HTTP/JSON |
 | Fake admin login | `http://localhost:5000/login` | "a fake login flow that behaves like a real misconfigured server" — always fails except a decoy credential planted in the fake `config.php`/`deploy.sh` files, which just leads to another fake page |
+| Fake vulnerable web portal | `http://localhost:5000/portal/login` | a fake "TechCorp" intranet with four genuinely exploitable, fully contained vulnerabilities: SQL injection auth bypass, stored XSS, IDOR/privilege escalation, and a weak-credential hidden admin panel — each MITRE-mapped and logged like every other surface |
 | Fake Telnet shell | `telnet localhost 2323` / `nc localhost 2323` | raw-socket line shell, same Session Manager + Response Engine as the HTTP terminal — a genuinely separate transport, not just a second route |
 | Fake MySQL listener | `mysql -h 127.0.0.1 -P 3307 -u root -p` | real MySQL protocol v10 handshake + `ERROR 1045 (28000): Access denied` — enough wire protocol to be believable, per build guide 6.2, without parsing real SQL |
 
-`run_honeypot.py` starts all three plus the dashboard together, loading the
+`run_honeypot.py` starts all five plus the dashboard together, loading the
 GPU model exactly once and sharing it across every surface.
 
 ## Project layout
@@ -99,31 +103,34 @@ honeypot/
     emulation/oracle*.py        deterministic shell simulator (ground truth + fallback)
     emulation/fake_telnet.py    raw-socket Telnet-style shell surface
     emulation/fake_db.py        MySQL wire-protocol handshake + auth-failure surface
+    emulation/fake_webapp.py    fake vulnerable web portal (SQLi, XSS, IDOR, weak creds)
     scripts/personas.py         4 synthetic attacker persona scripts
     scripts/gen_dataset.py      runs personas through the Oracle -> labeled dataset
     engine/prompt.py            system prompt + structured-output contract
     engine/train_lora.py        LoRA fine-tuning of the response model
     engine/merge_lora.py        merges adapter into base weights for inference
     engine/response_engine.py   runtime inference + safety fallback
-    engine/session_runner.py    shared session/engine/TTP spine for all 3 surfaces
+    engine/session_runner.py    shared session/engine/TTP spine for all 5 surfaces
     classifier/features.py      session -> feature vector
     classifier/train.py         trains skill + intent XGBoost classifiers
     classifier/predict.py       runtime classifier wrapper
     ttp/mitre_map.py            command-pattern -> MITRE ATT&CK technique
     ttp/store.py                SQLite TTP log + STIX 2.1 export
-    dashboard/app.py            Flask app: fake terminal, fake login, dashboard
+    dashboard/app.py            Flask app: fake terminal, login, web portal, dashboard
+    dashboard/templates/        terminal.html, login.html, dashboard.html, portal_*.html
   data/
     synthetic/sessions.jsonl   1,000 labeled sessions (classifier training data)
     synthetic/llm_pairs.jsonl  14,192 (state, command) -> (output, delta) pairs
     ttp.db                     live SQLite TTP log (created at runtime)
+    portal.db                  fake employee DB for the web portal (created at runtime)
   models/
     response_lora/             LoRA adapter + eval_metrics.json
     response_merged/           merged standalone model used at inference
     skill_classifier.joblib
     intent_classifier.joblib
     classifier_eval.json / .png
-  run_dashboard.py             HTTP surface only
-  run_honeypot.py              all three surfaces + dashboard together
+  run_dashboard.py             HTTP-based surfaces only
+  run_honeypot.py              all five surfaces + dashboard together
   requirements.txt
 ```
 
@@ -144,9 +151,9 @@ pip install -r requirements.txt
 # a few seconds slower to start) or rebuild it once, no GPU training needed:
 python src/engine/merge_lora.py
 
-# run all three surfaces + dashboard together
+# run all five surfaces + dashboard together
 python run_honeypot.py
-# or, HTTP surface only:
+# or, HTTP-based surfaces only:
 python run_dashboard.py
 ```
 
@@ -165,10 +172,35 @@ python src/engine/merge_lora.py          # merge the new adapter for inference
 Then:
 - `http://localhost:5000/` — the fake terminal an "attacker" interacts with
 - `http://localhost:5000/login` — the fake admin login page
+- `http://localhost:5000/portal/login` — the fake vulnerable web portal
+  (SQLi bypass: username `' OR '1'='1' --`; stored XSS via the feedback box;
+  IDOR via `/portal/profile?user_id=1`; weak admin creds `admin`/`admin123`
+  at `/portal/admin` — see HOW_TO_RUN.md for the full walkthrough)
 - `telnet localhost 2323` (or `nc localhost 2323`) — the fake Telnet shell
 - `mysql -h 127.0.0.1 -P 3307 -u root -p` — the fake MySQL listener
-- `http://localhost:5000/dashboard` — live session list across all four
+- `http://localhost:5000/dashboard` — live session list across all five
   entry points, skill/intent classification, per-command MITRE trace
+
+## Acknowledgements
+
+The fake vulnerable web portal (`src/emulation/fake_webapp.py`,
+`/portal/*`) adapts the four intentional web vulnerabilities from the
+"Website" component of [HoneyScope](https://github.com/Guptaharshal1515/HoneyScope)
+(SQL injection auth bypass, stored XSS, IDOR + privilege escalation, weak
+admin credentials). The vulnerability *mechanics* are reproduced faithfully;
+the *plumbing* is entirely this project's own — a Flask blueprint wired into
+`engine/session_runner.py` so every exploit attempt is logged, MITRE-mapped,
+and fed to the same skill/intent classifier as the shell/Telnet/DB surfaces.
+
+What was **not** ported from HoneyScope, and why:
+
+| HoneyScope component | Why it's out of scope here |
+|---|---|
+| Cowrie SSH honeypot | This project's fake Telnet shell (`fake_telnet.py`) already covers "fake interactive shell over a raw socket protocol"; adding a second, heavier SSH-protocol implementation on top would duplicate that surface without adding a new capability. |
+| Wazuh SIEM + custom detection rules | This project's own TTP store + MITRE mapping + dashboard (`ttp/store.py`, `ttp/mitre_map.py`, `/dashboard`) already serves the same role — event correlation and technique tagging — at single-machine scale. Standing up a second SIEM alongside it would be pure infrastructure duplication for a coursework build. |
+| Gemini 2.5 Flash AI analysis | Directly conflicts with this project's core requirement: **no external LLM API calls, anywhere.** The equivalent capability here is the locally fine-tuned response engine plus the locally trained skill/intent classifier — both already produce the "attacker behavior profile" HoneyScope gets from a hosted API call. |
+| Raspberry Pi cold-storage log node | Requires a second physical device and a multi-machine network topology; orthogonal to what this project demonstrates (a self-contained, single-machine honeypot with a trained local model). |
+| Multi-VM deployment (VM1/VM2 + iptables port redirection) | Real network isolation is exactly the kind of production-hardening step called out as future work in the original build guide's own section 6 — appropriate for a real deployment, not needed to demonstrate the deception/classification pipeline locally. |
 
 ## Known limitations (honest accounting, not hidden)
 

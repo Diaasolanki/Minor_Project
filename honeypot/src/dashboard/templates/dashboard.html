@@ -45,6 +45,7 @@
   .proto-telnet{color:var(--warn);background:#332c1c;}
   .proto-db{color:var(--danger);background:#331c22;}
   .proto-http-login{color:var(--purple);background:#2b1c33;}
+  .proto-webapp{color:#e88b4b;background:#332615;}
   .empty{color:var(--muted);font-size:13px;padding:30px 10px;text-align:center;}
   #detail{font-size:12.5px;max-height:420px;overflow-y:auto;}
   #detail .cmd{color:var(--accent);font-family:Consolas,monospace;}
@@ -80,6 +81,7 @@
   <nav>
     <a href="/">Fake terminal</a>
     <a href="/login">Fake admin login</a>
+    <a href="/portal/login">Vulnerable web portal</a>
   </nav>
 </header>
 <div class="wrap">
@@ -155,7 +157,7 @@ async function loadStats() {
     <div class="stat"><div class="num">${s.skill_breakdown.intermediate || 0}</div><div class="lbl">Intermediate</div></div>
     <div class="stat"><div class="num">${s.skill_breakdown.scripted_bot || 0}</div><div class="lbl">Bots</div></div>
     <div class="stat"><div class="num">${s.skill_breakdown.novice || 0}</div><div class="lbl">Novice</div></div>
-    <div class="stat"><div class="num">${(s.protocol_breakdown.telnet||0) + (s.protocol_breakdown.db||0) + (s.protocol_breakdown['http-login']||0)}</div><div class="lbl">Non-shell hits</div></div>
+    <div class="stat"><div class="num">${(s.protocol_breakdown.telnet||0) + (s.protocol_breakdown.db||0) + (s.protocol_breakdown['http-login']||0) + (s.protocol_breakdown.webapp||0)}</div><div class="lbl">Non-shell hits</div></div>
   `;
   renderTabs(s.protocol_breakdown, s.total_sessions);
 }
@@ -164,7 +166,8 @@ function renderTabs(breakdown, total) {
   const el = document.getElementById('protocol-tabs');
   const protos = [['all', 'All', total], ['http', 'HTTP shell', breakdown.http||0],
                   ['telnet', 'Telnet', breakdown.telnet||0], ['db', 'DB', breakdown.db||0],
-                  ['http-login', 'Login', breakdown['http-login']||0]];
+                  ['http-login', 'Login', breakdown['http-login']||0],
+                  ['webapp', 'Web Portal', breakdown.webapp||0]];
   el.innerHTML = protos.map(([key, label, n]) =>
     `<div class="tab ${key===currentProtocolFilter?'active':''}" data-proto="${key}">${label} (${n})</div>`
   ).join('');

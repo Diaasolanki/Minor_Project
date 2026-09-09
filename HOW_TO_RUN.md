@@ -52,10 +52,11 @@ scikit-learn, XGBoost, Flask, and supporting libraries — no paid API SDKs.
 From the `honeypot/` directory, with the virtual environment activated:
 
 ```bash
-# all four attacker surfaces + dashboard together (recommended)
+# all five attacker surfaces + dashboard together (recommended)
 python run_honeypot.py
 
-# or, HTTP surface only (faster to start, skips the Telnet/DB listeners)
+# or, HTTP surfaces only (fake terminal, login, vulnerable web portal —
+# skips the raw-socket Telnet/DB listeners)
 python run_dashboard.py
 ```
 
@@ -68,16 +69,38 @@ seconds. Once you see `[engine] model ready` in the console, everything is up.
 |---|---|
 | Fake terminal | Open `http://localhost:5000/` in a browser |
 | Fake admin login | Open `http://localhost:5000/login` in a browser |
+| Fake vulnerable web portal | Open `http://localhost:5000/portal/login` in a browser |
 | Fake Telnet shell | `telnet localhost 2323` (or `nc localhost 2323`) |
 | Fake MySQL listener | `mysql -h 127.0.0.1 -P 3307 -u root -p` |
 | Live dashboard | Open `http://localhost:5000/dashboard` in a browser |
 
+### Trying the vulnerable web portal
+
+The portal (`/portal/login`) is a fake "TechCorp" employee intranet with four
+genuinely exploitable — but fully contained and fake — vulnerabilities, each
+logged and MITRE-mapped like every other surface:
+
+| Vulnerability | How to trigger it | MITRE technique |
+|---|---|---|
+| SQL injection (auth bypass) | At `/portal/login`, enter username `' OR '1'='1' --` with any password | T1190 |
+| Stored XSS | Log in, then post `<script>alert(1)</script>` as feedback on the dashboard | T1059 |
+| IDOR (view another user) | While logged in as a low-privilege user, visit `/portal/profile?user_id=1` | T1078 |
+| Privilege escalation | On your own profile page, change the "Role" dropdown to Admin and save | T1078 |
+| Weak/default admin credentials | At `/portal/admin`, log in with `admin` / `admin123` | T1078 |
+
+None of this touches your real filesystem, a real database beyond a small
+local SQLite decoy (`honeypot/data/portal.db`, seeded with fake employees),
+or any real user data — it exists purely to give the classifier a genuine web
+-attack surface to observe, the same way the shell/Telnet/DB surfaces give it
+a genuine command-line surface.
+
 ### Using the dashboard
 
 1. Interact with any surface above to generate sessions (type shell commands,
-   try logging in, or connect via a telnet/mysql client).
+   try logging in, try the portal's vulnerabilities, or connect via a
+   telnet/mysql client).
 2. Open the dashboard and use the protocol tabs (All / HTTP shell / Telnet /
-   DB / Login) to filter sessions.
+   DB / Login / Web Portal) to filter sessions.
 3. Click a session row to load its command trace.
 4. Use **Play / Step / Reset** and the speed selector to replay a session
    like a recording.
@@ -120,6 +143,7 @@ honeypot/
     emulation/oracle*.py        deterministic shell simulator (ground truth + fallback)
     emulation/fake_telnet.py    raw-socket Telnet-style shell surface
     emulation/fake_db.py        MySQL wire-protocol handshake + auth-failure surface
+    emulation/fake_webapp.py    fake vulnerable web portal (SQLi, XSS, IDOR, weak creds)
     scripts/personas.py         4 synthetic attacker persona scripts
     scripts/gen_dataset.py      runs personas through the Oracle -> labeled dataset
     engine/prompt.py            system prompt + structured-output contract
@@ -132,20 +156,21 @@ honeypot/
     classifier/predict.py       runtime classifier wrapper
     ttp/mitre_map.py            command-pattern -> MITRE ATT&CK technique
     ttp/store.py                SQLite TTP log + metrics + STIX 2.1 export
-    dashboard/app.py            Flask app: fake terminal, fake login, dashboard
-    dashboard/templates/        terminal.html, login.html, dashboard.html
+    dashboard/app.py            Flask app: fake terminal, fake login, web portal, dashboard
+    dashboard/templates/        terminal.html, login.html, dashboard.html, portal_*.html
   data/
     synthetic/sessions.jsonl    1,000 labeled sessions (classifier training data)
     synthetic/llm_pairs.jsonl   14,192 (state, command) -> (output, delta) pairs
     ttp.db                      live SQLite TTP log (created at runtime)
+    portal.db                   fake employee DB for the web portal (created at runtime)
   models/
     response_lora/              LoRA adapter + eval_metrics.json
     response_merged/            merged standalone model used at inference
     skill_classifier.joblib
     intent_classifier.joblib
     classifier_eval.json / .png
-  run_dashboard.py               HTTP surface only
-  run_honeypot.py                all four surfaces + dashboard together
+  run_dashboard.py               HTTP-based surfaces only
+  run_honeypot.py                all five surfaces + dashboard together
   requirements.txt
 ```
 
@@ -161,3 +186,14 @@ honeypot/
 - **No GPU / CUDA not available** — the response engine will still run on
   CPU, just much slower per command; the deterministic Oracle fallback keeps
   the honeypot usable in the meantime.
+
+## 8. Credit
+
+The fake vulnerable web portal (`emulation/fake_webapp.py`) adapts the four
+intentional web vulnerabilities from the "Website" component of
+[HoneyScope](https://github.com/Guptaharshal1515/HoneyScope) (SQLi auth
+bypass, stored XSS, IDOR/privilege escalation, weak admin credentials),
+reimplemented against this project's own session/TTP/classifier pipeline.
+HoneyScope's SIEM (Wazuh), SSH honeypot (Cowrie), Raspberry Pi cold-storage
+node, and Gemini-based AI analysis were deliberately **not** ported — see
+`honeypot/README.md` for why.

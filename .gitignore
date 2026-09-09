@@ -7,6 +7,7 @@ venv/
 
 # Runtime data (regenerated / grows unbounded)
 honeypot/data/ttp.db
+honeypot/data/portal.db
 
 # Large merged inference model (2.9GB) — exclude from git.
 # Regenerate locally with: python src/engine/merge_lora.py

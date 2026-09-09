@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>System Administration</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Segoe UI",Arial,sans-serif;min-height:100vh;display:flex;align-items:center;
+      justify-content:center;background:linear-gradient(135deg,#1a0a0a 0%,#2d1515 50%,#1a0e0e 100%);
+      color:#e0e0e0;}
+  .card{width:100%;max-width:380px;background:rgba(255,255,255,.04);border:1px solid rgba(239,68,68,.15);
+       border-radius:18px;padding:40px 34px;}
+  .logo{text-align:center;margin-bottom:24px;}
+  .logo .shield{width:48px;height:48px;background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:13px;
+              display:inline-flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;}
+  .logo h1{font-size:18px;font-weight:700;color:#fff;}
+  .logo p{font-size:11.5px;color:rgba(255,255,255,.4);margin-top:5px;}
+  .form-group{margin-bottom:16px;}
+  label{display:block;font-size:12.5px;color:rgba(255,255,255,.6);margin-bottom:6px;}
+  input{width:100%;padding:11px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+       border-radius:9px;font-size:13.5px;color:#fff;outline:none;}
+  input:focus{border-color:#dc2626;}
+  button{width:100%;padding:12px;margin-top:6px;background:linear-gradient(135deg,#dc2626,#991b1b);
+        border:none;border-radius:9px;font-size:13.5px;font-weight:600;color:#fff;cursor:pointer;}
+  .error{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5;
+        padding:10px 14px;border-radius:8px;font-size:12.5px;margin-bottom:16px;text-align:center;}
+  .back{display:block;text-align:center;margin-top:18px;font-size:11.5px;color:rgba(255,255,255,.3);
+       text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="shield">&#128737;</div>
+    <h1>System Administration</h1>
+    <p>Restricted Access &mdash; Authorized Admins Only</p>
+  </div>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="POST" action="/portal/admin">
+    <div class="form-group">
+      <label>Admin Username</label>
+      <input type="text" name="username" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Admin Password</label>
+      <input type="password" name="password">
+    </div>
+    <button type="submit">Authenticate</button>
+  </form>
+  <a href="/portal/login" class="back">&larr; Back to main portal</a>
+</div>
+</body>
+</html>

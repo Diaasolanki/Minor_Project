@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TechCorp Portal — Profile</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Segoe UI",Arial,sans-serif;min-height:100vh;background:#0e0e1a;color:#e0e0e0;}
+  .topnav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;
+         background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06);}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;color:#fff;}
+  .brand .dot{width:30px;height:30px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:9px;
+            display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .nav-links a{color:rgba(255,255,255,.6);text-decoration:none;font-size:13.5px;margin-right:20px;}
+  .nav-links a.active{color:#667eea;}
+  .btn-logout{padding:6px 14px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);
+            border-radius:7px;color:#fca5a5;font-size:12px;text-decoration:none;}
+  .main{max-width:620px;margin:44px auto;padding:0 20px;}
+  .profile-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+               border-radius:18px;padding:34px;}
+  .profile-header{display:flex;align-items:center;gap:18px;margin-bottom:26px;
+                 padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .profile-avatar{width:60px;height:60px;background:linear-gradient(135deg,#667eea,#764ba2);
+                 border-radius:50%;display:flex;align-items:center;justify-content:center;
+                 font-size:24px;font-weight:700;color:#fff;flex-shrink:0;}
+  .profile-header-info h2{font-size:19px;color:#fff;}
+  .profile-header-info p{font-size:12.5px;color:rgba(255,255,255,.4);margin-top:3px;}
+  .badge{display:inline-block;padding:3px 10px;font-size:10px;font-weight:600;border-radius:6px;
+        text-transform:uppercase;margin-top:6px;}
+  .badge-admin{background:rgba(239,68,68,.2);color:#fca5a5;}
+  .badge-manager{background:rgba(234,179,8,.2);color:#fde68a;}
+  .badge-employee{background:rgba(34,197,94,.2);color:#86efac;}
+  .success{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#86efac;
+          padding:10px 14px;border-radius:9px;font-size:12.5px;margin-bottom:20px;text-align:center;}
+  .section-title{font-size:14px;font-weight:600;color:#fff;margin-bottom:16px;}
+  .form-group{margin-bottom:16px;}
+  label{display:block;font-size:12.5px;color:rgba(255,255,255,.6);margin-bottom:6px;}
+  input,select{width:100%;padding:11px 14px;background:rgba(255,255,255,.07);
+             border:1px solid rgba(255,255,255,.12);border-radius:9px;font-size:13.5px;
+             color:#fff;font-family:inherit;outline:none;}
+  select option{background:#1a1a2e;color:#fff;}
+  .btn-save{width:100%;padding:12px;margin-top:6px;background:linear-gradient(135deg,#667eea,#764ba2);
+          border:none;border-radius:10px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;}
+  .idor-hint{margin-top:20px;padding:12px;background:rgba(234,179,8,.08);
+           border:1px solid rgba(234,179,8,.15);border-radius:9px;font-size:11.5px;
+           color:rgba(255,255,255,.35);text-align:center;}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="brand"><div class="dot">&#127970;</div> TechCorp Portal</div>
+  <div class="nav-links">
+    <a href="/portal/dashboard">Dashboard</a>
+    <a href="/portal/profile?user_id={{ user['id'] }}" class="active">Profile</a>
+  </div>
+  <a href="/portal/logout" class="btn-logout">Sign Out</a>
+</nav>
+<div class="main">
+  <div class="profile-card">
+    <div class="profile-header">
+      <div class="profile-avatar">{{ user['username'][0]|upper }}</div>
+      <div class="profile-header-info">
+        <h2>{{ user['username'] }}</h2>
+        <p>{{ user['email'] }}</p>
+        <span class="badge badge-{{ user['role'] }}">{{ user['role'] }}</span>
+      </div>
+    </div>
+    {% if message %}<div class="success">{{ message }}</div>{% endif %}
+    <div class="section-title">Edit Profile</div>
+    <form method="POST" action="/portal/profile?user_id={{ user['id'] }}">
+      <input type="hidden" name="user_id" value="{{ user['id'] }}">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" value="{{ user['username'] }}">
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" name="email" value="{{ user['email'] }}">
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <!-- No permission check: editable role field is the privilege-escalation decoy -->
+        <select name="role">
+          <option value="employee" {% if user['role']=='employee' %}selected{% endif %}>Employee</option>
+          <option value="manager" {% if user['role']=='manager' %}selected{% endif %}>Manager</option>
+          <option value="admin" {% if user['role']=='admin' %}selected{% endif %}>Admin</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-save">Save Changes</button>
+    </form>
+    <div class="idor-hint">Profile ID: {{ user['id'] }} &mdash; viewing via /portal/profile?user_id={{ user['id'] }}</div>
+  </div>
+</div>
+</body>
+</html>
