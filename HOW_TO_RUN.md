@@ -150,7 +150,7 @@ honeypot/
     engine/train_lora.py        LoRA fine-tuning of the response model
     engine/merge_lora.py        merges adapter into base weights for inference
     engine/response_engine.py   runtime inference + safety fallback
-    engine/session_runner.py    shared session/engine/TTP spine for all 4 surfaces
+    engine/session_runner.py    shared session/engine/TTP spine for all 5 surfaces
     classifier/features.py      session -> feature vector
     classifier/train.py         trains skill + intent XGBoost classifiers
     classifier/predict.py       runtime classifier wrapper

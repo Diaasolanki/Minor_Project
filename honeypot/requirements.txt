@@ -5,13 +5,8 @@ accelerate
 datasets
 scikit-learn
 xgboost
-pandas
 numpy
 matplotlib
 joblib
-fastapi
-uvicorn[standard]
 flask
-flask-sock
-requests
 sentencepiece

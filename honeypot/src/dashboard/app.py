@@ -1,11 +1,12 @@
-"""Flask app: fake HTTP terminal + fake admin login + live dashboard.
+"""Flask app: fake HTTP terminal + fake admin login + fake vulnerable web
+portal + live dashboard.
 
 Stands in for Cowrie+React+WebSockets from the build guide at coursework scale:
 same request flow (section 2.1) — command in, Session Manager fetches state, Response
 Engine produces output + delta, delta applied, event logged, dashboard reads from the
 same SQLite store. Shares its ResponseEngine/classifier/session registry with the
-fake Telnet and fake DB surfaces via engine.session_runner, so all three protocol
-surfaces show up in one dashboard.
+fake Telnet and fake DB surfaces (and the fake web portal's own blueprint) via
+engine.session_runner, so all five protocol surfaces show up in one dashboard.
 """
 from __future__ import annotations
 

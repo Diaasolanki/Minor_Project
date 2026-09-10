@@ -24,7 +24,7 @@ import re
 import sqlite3
 from contextlib import contextmanager
 
-from flask import Blueprint, g, redirect, render_template, request, session, url_for
+from flask import Blueprint, redirect, render_template, request, session, url_for
 
 from engine.session_runner import REGISTRY
 
