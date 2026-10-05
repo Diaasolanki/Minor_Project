@@ -187,12 +187,7 @@ honeypot/
   CPU, just much slower per command; the deterministic Oracle fallback keeps
   the honeypot usable in the meantime.
 
-## 8. Credit
 
-The fake vulnerable web portal (`emulation/fake_webapp.py`) adapts the four
-intentional web vulnerabilities from the "Website" component of
-[HoneyScope](https://github.com/Guptaharshal1515/HoneyScope) (SQLi auth
-bypass, stored XSS, IDOR/privilege escalation, weak admin credentials),
 reimplemented against this project's own session/TTP/classifier pipeline.
 HoneyScope's SIEM (Wazuh), SSH honeypot (Cowrie), Raspberry Pi cold-storage
 node, and Gemini-based AI analysis were deliberately **not** ported — see
